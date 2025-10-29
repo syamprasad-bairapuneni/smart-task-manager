@@ -89,7 +89,7 @@ A modern full-stack task management application with productivity analytics, bui
    cd smart-task-manager
    ```
 
-2. **Start all services**
+2. **Start all services (run from project root)**
    ```bash
    docker-compose up -d
    ```
@@ -171,6 +171,41 @@ A modern full-stack task management application with productivity analytics, bui
    npm run dev
    ```
    Frontend will run on http://localhost:5173
+
+## ❗ Docker Tips & Troubleshooting
+
+### Run from project root
+The `docker-compose.yml` is in the project root and references Dockerfiles inside `backend/` and `frontend/`. Always run compose commands from the project root:
+
+```bash
+docker compose up -d
+```
+
+### Error: failed to read dockerfile: open Dockerfile: no such file or directory
+This occurs if you run `docker build` in the root where there is no `Dockerfile`.
+
+Fixes:
+- Use compose from the root (recommended):
+```bash
+docker compose up -d
+```
+
+- Or build services explicitly by pointing to the Dockerfile and context:
+```bash
+# Backend
+docker build -t smart-task-backend -f backend/Dockerfile backend
+docker run --rm -p 5000:5000 --name smart-task-backend \
+  -e SECRET_KEY=dev \
+  -e DATABASE_URL='sqlite:////app/task_manager.db' \
+  -e CORS_ORIGINS='http://localhost:5173' \
+  smart-task-backend
+
+# Frontend
+docker build -t smart-task-frontend -f frontend/Dockerfile frontend
+docker run --rm -p 5173:5173 --name smart-task-frontend \
+  -e VITE_API_URL='http://localhost:5000' \
+  smart-task-frontend
+```
 
 ## 📁 Project Structure
 
