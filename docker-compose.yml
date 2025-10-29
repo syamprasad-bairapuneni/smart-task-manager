@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: task_manager_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: task_manager
+      MYSQL_USER: taskuser
+      MYSQL_PASSWORD: taskpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - task_manager_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: task_manager_backend
+    restart: always
+    environment:
+      SECRET_KEY: your-secret-key-change-in-production
+      DATABASE_URL: mysql+pymysql://taskuser:taskpassword@mysql:3306/task_manager
+      CORS_ORIGINS: http://localhost:5173,http://localhost:3000
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mysql
+    networks:
+      - task_manager_network
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: task_manager_frontend
+    restart: always
+    environment:
+      VITE_API_URL: http://localhost:5000
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+    networks:
+      - task_manager_network
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+networks:
+  task_manager_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+
