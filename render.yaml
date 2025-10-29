@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: smart-task-backend
+    env: docker
+    dockerfilePath: backend/Dockerfile
+    plan: free
+    autoDeploy: true
+    healthCheckPath: /api/health
+    envVars:
+      - key: SECRET_KEY
+        sync: false
+      - key: DATABASE_URL
+        value: sqlite:////app/instance/task_manager.db
+      - key: CORS_ORIGINS
+        value: https://smart-task-frontend.onrender.com,https://localhost:5173
+    disk:
+      name: backend-instance-disk
+      mountPath: /app/instance
+      sizeGB: 1
+
+  - type: static
+    name: smart-task-frontend
+    plan: free
+    autoDeploy: true
+    buildCommand: npm ci && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        value: https://smart-task-backend.onrender.com
+    buildFilter:
+      paths:
+        - frontend/**
